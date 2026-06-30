@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>BrandSurface Jobmappe – indstillinger</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #E8762C;
+      --peach:  #F2B05F;
+      --yellow: #F7DC79;
+      --coral:  #E87E86;
+      --ink:    #2c2a28;
+      --muted:  #7c7670;
+      --line:   #efe7df;
+      --card:   #ffffff;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: 'Montserrat', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, #E8762C 0%, #F2B05F 38%, #F7DC79 68%, #E87E86 100%);
+      background-attachment: fixed;
+    }
+
+    .card {
+      max-width: 680px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 22px;
+      box-shadow: 0 18px 50px rgba(60, 30, 0, 0.22);
+      overflow: hidden;
+    }
+
+    .hero {
+      padding: 26px 30px;
+      background: linear-gradient(135deg, var(--orange), var(--coral));
+      color: #fff;
+    }
+    .hero h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: .2px; }
+    .hero p  { margin: 4px 0 0; font-size: 13px; font-weight: 500; opacity: .92; }
+
+    .content { padding: 26px 30px 30px; }
+
+    section { padding: 20px 0; border-bottom: 1px solid var(--line); }
+    section:first-of-type { padding-top: 4px; }
+    section:last-of-type { border-bottom: none; padding-bottom: 4px; }
+
+    label { display: block; margin-bottom: 6px; font-weight: 700; font-size: 15px; }
+    p { margin: 6px 0; line-height: 1.5; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .ok  { color: #128a4e; font-weight: 600; }
+    .err { color: #cc3344; font-weight: 600; }
+    em { color: var(--orange); font-style: normal; font-weight: 600; }
+
+    code {
+      background: #fdf3e7; color: #b8611f;
+      padding: 2px 6px; border-radius: 6px;
+      font-family: 'Montserrat', monospace; font-size: 12px; font-weight: 600;
+    }
+
+    input[type=text] {
+      padding: 10px 12px; border-radius: 10px;
+      border: 1.5px solid #e4ddd5; font: inherit; font-weight: 600;
+      width: 150px; text-transform: uppercase;
+      background: #fff; color: var(--ink); transition: border-color .15s, box-shadow .15s;
+    }
+    input[type=text]:focus {
+      outline: none; border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(232, 118, 44, .18);
+    }
+
+    /* Knapper – grundstil */
+    button {
+      font-family: inherit; font-weight: 600; font-size: 14px;
+      padding: 10px 16px; border-radius: 10px;
+      border: 1.5px solid #e4ddd5; background: #fff; color: var(--ink);
+      cursor: pointer; transition: transform .12s, box-shadow .15s, background .15s, border-color .15s;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(60,30,0,.12); }
+    button:active { transform: translateY(0); }
+
+    /* Accent-knapper (vælg destination / tilføj mappe) */
+    #pick, #pickArchive, #addRoot {
+      background: linear-gradient(135deg, var(--orange), var(--peach));
+      color: #fff; border: none;
+    }
+    #pick:hover, #pickArchive:hover, #addRoot:hover { filter: brightness(1.04); }
+
+    /* Fjern / nulstil – diskret */
+    .clear-btn {
+      font-size: 12.5px; padding: 7px 12px; margin-left: 8px;
+      color: #cc3344; border-color: #f3d2d6; background: #fff7f8;
+    }
+    .clear-btn:hover { background: #fdeef0; }
+
+    /* Den store gem-knap */
+    .save-btn {
+      font-weight: 700; font-size: 15px; padding: 13px 26px; border: none;
+      color: #fff; border-radius: 12px;
+      background: linear-gradient(135deg, var(--orange) 0%, var(--coral) 100%);
+      box-shadow: 0 8px 20px rgba(232, 118, 44, .32);
+    }
+    .save-btn:hover { filter: brightness(1.05); box-shadow: 0 10px 24px rgba(232, 118, 44, .4); }
+    .save-btn:disabled { filter: none; cursor: default; transform: none; box-shadow: 0 8px 20px rgba(18,138,78,.32); background: linear-gradient(135deg, #18a558, #128a4e); }
+
+    /* Gem-kvittering */
+    #saveStatus { margin-top: 14px; white-space: pre-line; }
+    .savebox { padding: 14px 16px; border-radius: 12px; font-weight: 600; border: 1.5px solid transparent; font-size: 13.5px; line-height: 1.6; }
+    .savebox.ok    { background: #effaf2; border-color: #18a558; color: #0f6b3c; }
+    .savebox.err   { background: #fdeff1; border-color: #e0566a; color: #a1283a; }
+    .savebox.muted { background: #faf6f1; border-color: var(--line); color: var(--muted); }
+
+    /* Mappestruktur-editor */
+    #treeContainer { margin: 12px 0; }
+    ul.tree { list-style: none; margin: 4px 0; padding-left: 18px; }
+    ul.tree ul.tree { border-left: 2px solid #f3e6d8; margin-left: 7px; padding-left: 14px; }
+    ul.tree > li { margin: 5px 0; }
+    .tree-row { display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; }
+    input.tree-name {
+      width: 240px; text-transform: none; font-weight: 600;
+      padding: 8px 11px; flex: 0 1 240px;
+    }
+    .tree-btn {
+      padding: 7px 9px; font-size: 13px; line-height: 1; border-radius: 8px;
+      background: #fff; border: 1.5px solid #ece4db; color: var(--ink);
+    }
+    .tree-btn:hover { background: #fdf6ee; border-color: var(--peach); }
+    .tree-btn.danger { color: #cc3344; border-color: #f3d2d6; }
+    .tree-btn.danger:hover { background: #fdeef0; border-color: var(--coral); }
+
+    .footer-note { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="hero">
+      <h1>BrandSurface Jobmappe</h1>
+      <p>Indstillinger · initialer, destinationer og mappestruktur</p>
+    </div>
+
+    <div class="content">
+      <section>
+        <label for="prefix">Dine initialer</label>
+        <p class="muted">Bruges i WIP-mappen, fx <code>03_26.06.23_Dine initialer</code>. Skriv dine egne initialer.</p>
+        <input type="text" id="prefix" maxlength="20" placeholder="XX"/>
+      </section>
+
+      <section>
+        <label>Primær destination (jobmapper)</label>
+        <p class="muted">Her oprettes nye jobmapper via højreklik → <em>BrandSurface jobmappe</em>. Vælg en mappe på et lokalt eller tilknyttet drev.</p>
+        <button id="pick">Vælg primær destination…</button>
+        <button id="clearPrimary" class="clear-btn" style="display:none">Fjern</button>
+        <p id="status"></p>
+        <p class="muted">Tip: Hvis adgang udløber, åbn popup-ikonet og klik "Giv adgang".</p>
+      </section>
+
+      <section>
+        <label>Arkivdestination (arkivdrev)</label>
+        <p class="muted">Her oprettes mapper via højreklik → <em>BrandSurface arkivér</em>. Vælg en mappe på et andet drev (fx arkivdrev eller eksternt drev).</p>
+        <button id="pickArchive">Vælg arkivdestination…</button>
+        <button id="clearArchive" class="clear-btn" style="display:none">Fjern</button>
+        <p id="archiveStatus"></p>
+        <p class="muted">Tip: Netværksdrev skal være tilknyttet som et drevbogstav (fx Z:\) for at virke.</p>
+      </section>
+
+      <section>
+        <label>Mappestruktur</label>
+        <p class="muted">Bestem selv hvilke mapper der oprettes, og hvordan de ligger i hinanden. Omdøb direkte i feltet. Brug pilene: <strong>⬆⬇</strong> flytter op/ned, <strong>⬅</strong> rykker ud (op i hierarkiet), <strong>➡</strong> rykker ind (gør den til undermappe af mappen ovenfor), <strong>＋</strong> tilføjer en undermappe, <strong>🗑</strong> sletter.</p>
+        <p class="muted">Tip: <code>YY.MM.DD</code> bliver til dagens dato og <code>{INIT}</code> til dine initialer.</p>
+        <div id="treeContainer"></div>
+        <button id="addRoot">＋ Tilføj hovedmappe</button>
+        <button id="resetStruct" class="clear-btn">Nulstil til standard</button>
+        <p class="muted footer-note">Husk at trykke <em>Gem indstillinger</em> nederst for at gemme strukturen.</p>
+      </section>
+
+      <section>
+        <button id="saveAll" class="save-btn">Gem indstillinger</button>
+        <p class="muted footer-note">Destinationer gemmes allerede når du vælger dem. Knappen her gemmer dine initialer og strukturen og bekræfter alle valg.</p>
+        <p id="saveStatus" class="muted"></p>
+      </section>
+    </div>
+  </div>
+
+  <script src="idb.js"></script>
+  <script src="structure.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
