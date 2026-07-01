@@ -137,6 +137,11 @@ Sådan håndterer udvidelsen det:
 Skulle automatikken ikke kunne køre (ældre browser, eller Chrome blokerer), vises i
 stedet knappen **"Giv adgang"** i vinduet — tryk på den, så fuldføres jobbet.
 
+Hvis du (eller en virksomhedspolitik) har **afvist** adgangen permanent — fx trykket
+"Bloker" i stedet for at genkalde — kan Chrome ikke spørge igen for den samme mappe.
+Vinduet viser da en besked om at adgangen er afvist, uden en "Giv adgang"-knap. Løsningen
+er at vælge mappen igen under **Indstillinger**.
+
 ---
 
 ## Indstillinger

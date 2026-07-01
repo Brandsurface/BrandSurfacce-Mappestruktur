@@ -46,6 +46,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (pending && pending.handleKey === idbKey) await resumePending(stateEl);
     }
 
+    // Permanently denied ('Block' was chosen) — requestPermission() will never
+    // show a prompt again for this handle, so a "Giv adgang" button here would
+    // just silently fail. The only way forward is picking the folder again.
+    function showDenied() {
+      stateEl.textContent =
+        `${handle.name} – adgang afvist permanent. Vælg mappen igen via "Åbn indstillinger" nedenfor.`;
+      stateEl.className = 'err';
+      grantBtn.style.display = 'none';
+    }
+
     async function refresh() {
       const perm = await handle.queryPermission({ mode: 'readwrite' });
       if (perm === 'granted') {
@@ -53,6 +63,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         stateEl.className = 'ok';
         grantBtn.style.display = 'none';
         if (pending && pending.handleKey === idbKey) await resumePending(stateEl);
+      } else if (perm === 'denied') {
+        showDenied();
       } else {
         stateEl.textContent = `${handle.name} – adgang udløbet.`;
         stateEl.className = 'muted';
@@ -63,6 +75,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     grantBtn.addEventListener('click', async () => {
       try {
         const perm = await handle.requestPermission({ mode: 'readwrite' });
+        if (perm === 'denied') {
+          showDenied();
+          return;
+        }
         if (perm !== 'granted') {
           stateEl.textContent = 'Adgang afvist.';
           stateEl.className = 'err';
@@ -81,6 +97,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // "Allow on every visit" was chosen). Fall back to the button on failure.
     if (pending && pending.handleKey === idbKey) {
       const perm = await handle.queryPermission({ mode: 'readwrite' });
+      if (perm === 'denied') {
+        showDenied();
+        return;
+      }
       if (perm !== 'granted') {
         try {
           const r = await handle.requestPermission({ mode: 'readwrite' });
