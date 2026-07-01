@@ -175,8 +175,8 @@ async function notifyResult(tabId, resp) {
   }
 }
 
-async function handleFolderAction(info, handleKey) {
-  const tabId = info.tab?.id ?? null;
+async function handleFolderAction(info, tab, handleKey) {
+  const tabId = tab?.id ?? null;
   const folderName = sanitizeName(info.selectionText);
   const { prefix = 'XX' } = await chrome.storage.sync.get('prefix');
 
@@ -225,16 +225,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   return true; // keep the message channel open for the async response
 });
 
-chrome.contextMenus.onClicked.addListener(async (info) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === 'select-desktop-folder') {
     chrome.runtime.openOptionsPage();
     return;
   }
   try {
     if (info.menuItemId === 'create-desktop-folder-from-selection') {
-      await handleFolderAction(info, 'desktopDir');
+      await handleFolderAction(info, tab, 'desktopDir');
     } else if (info.menuItemId === 'archive-folder-from-selection') {
-      await handleFolderAction(info, 'archiveDir');
+      await handleFolderAction(info, tab, 'archiveDir');
     }
   } catch (e) {
     // Last-resort: if everything above throws, at least show a badge.
