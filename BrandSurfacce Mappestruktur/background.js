@@ -15,7 +15,7 @@ function sanitizeName(name) {
 // Layer 2: Toast injected via toast.js — works on all normal web pages.
 // Layer 3: Native Chrome notification — last resort (may be blocked by OS).
 
-async function showToast(tabId, message, type) {
+async function showToast(tabId, message, type, { retryable = false } = {}) {
   const isOk = type === 'ok';
 
   // Layer 1: coloured badge on extension icon (always visible).
@@ -28,7 +28,7 @@ async function showToast(tabId, message, type) {
   // Layer 2: floating toast in the current tab via injected file.
   if (tabId != null) {
     try {
-      await chrome.storage.local.set({ __bs_toast_data: { message, type, ts: Date.now() } });
+      await chrome.storage.local.set({ __bs_toast_data: { message, type, ts: Date.now(), retryable } });
       await chrome.scripting.executeScript({ target: { tabId }, files: ['toast.js'] });
       return; // success — skip native notification
     } catch (_) {}
@@ -175,6 +175,27 @@ async function notifyResult(tabId, resp) {
   }
 }
 
+// Try to open the extension popup so the user can (re-)grant access to a
+// pending job's handle, and show a red toast either way. The toast is always
+// clickable ('retryable') so the user can re-trigger this from the page too —
+// e.g. if the popup opened but got closed/missed, or the auto-open failed.
+async function offerPermissionRetry(tabId) {
+  let opened = false;
+  try {
+    await chrome.action.openPopup();
+    opened = true;
+  } catch (_) {}
+  await showToast(
+    tabId,
+    opened
+      ? 'Adgang udløbet – bekræft i vinduet, så oprettes mappen automatisk.'
+      : 'Adgang udløbet – klik her for at åbne godkendelse.',
+    'error',
+    { retryable: true },
+  );
+  return opened;
+}
+
 async function handleFolderAction(info, tab, handleKey) {
   const tabId = tab?.id ?? null;
   const folderName = sanitizeName(info.selectionText);
@@ -184,23 +205,12 @@ async function handleFolderAction(info, tab, handleKey) {
 
   if (resp?.status === 'need-permission') {
     // Permission resets after a Chrome restart. Stash the request so the popup
-    // can finish it after the user re-grants, then auto-open the popup (the
-    // context-menu click provides the user activation openPopup needs).
+    // (or a later retry click on the toast) can finish it after the user
+    // re-grants.
     await chrome.storage.local.set({
       __bs_pending: { handleKey, folderName, prefix, tabId, ts: Date.now() },
     });
-    let opened = false;
-    try {
-      await chrome.action.openPopup();
-      opened = true;
-    } catch (_) {}
-    await showToast(
-      tabId,
-      opened
-        ? 'Adgang udløbet – bekræft i vinduet, så oprettes mappen automatisk.'
-        : 'Adgang udløbet – klik på BrandSurface-ikonet for at forny.',
-      'error',
-    );
+    await offerPermissionRetry(tabId);
     return;
   }
 
@@ -221,6 +231,19 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     });
     await notifyResult(pending.tabId ?? null, resp);
     sendResponse(resp);
+  })();
+  return true; // keep the message channel open for the async response
+});
+
+// The red "adgang udløbet" toast was clicked — try again to open the popup
+// for whatever job is still pending.
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type !== 'retry-permission') return;
+  (async () => {
+    const { __bs_pending: pending } = await chrome.storage.local.get('__bs_pending');
+    if (!pending) { sendResponse({ status: 'no-pending' }); return; }
+    const opened = await offerPermissionRetry(pending.tabId ?? null);
+    sendResponse({ opened });
   })();
   return true; // keep the message channel open for the async response
 });
