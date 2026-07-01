@@ -1,4 +1,6 @@
 // popup.js
+const STATE_EL_ID = { desktopDir: 'state', archiveDir: 'archiveState' };
+
 document.addEventListener('DOMContentLoaded', async () => {
   const openLink = document.getElementById('open');
   openLink?.addEventListener('click', (e) => {
@@ -13,15 +15,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     ({ __bs_pending: pending } = await chrome.storage.local.get('__bs_pending'));
   } catch (_) {}
 
-  // After re-granting, tell the background to finish the pending job, then close.
+  let pendingResolved = false;
+
+  // Tell the background to finish the pending job, then close this popup.
   async function resumePending(stateEl) {
-    if (!pending) return;
-    stateEl.textContent = 'Opretter mappe…';
-    stateEl.className = 'muted';
+    if (pendingResolved) return;
+    pendingResolved = true;
+    if (stateEl) {
+      stateEl.textContent = 'Opretter mappe…';
+      stateEl.className = 'muted';
+    }
     try {
       await chrome.runtime.sendMessage({ type: 'permission-granted' });
     } catch (_) {}
     setTimeout(() => window.close(), 600);
+  }
+
+  // Try to silently finish the pending job as the very first thing this popup
+  // does, before any other DOM/IndexedDB work: every extra await before
+  // requestPermission() risks losing the user-activation window carried over
+  // from the click that opened this popup — that's the difference between
+  // this popup auto-closing itself ("just pressing the button" for the user)
+  // and the user having to click "Giv adgang" manually below. If this fails,
+  // the normal per-handle UI further down still offers that manual fallback.
+  if (pending) {
+    try {
+      const handle = await idbGet(pending.handleKey);
+      if (handle) {
+        const stateEl = document.getElementById(STATE_EL_ID[pending.handleKey]);
+        const perm = await handle.queryPermission({ mode: 'readwrite' });
+        if (perm === 'granted') {
+          await resumePending(stateEl);
+        } else if (perm !== 'denied') {
+          const r = await handle.requestPermission({ mode: 'readwrite' });
+          if (r === 'granted') {
+            try { await navigator.storage?.persist?.(); } catch (_) {}
+            await resumePending(stateEl);
+          }
+        }
+      }
+    } catch (_) { /* fall through — the normal per-handle UI below still works */ }
   }
 
   async function setupHandleUI(idbKey, stateEl, grantBtn) {
@@ -90,24 +123,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         stateEl.className = 'err';
       }
     });
-
-    // If a job is waiting on this exact handle, try to re-grant automatically.
-    // The popup opened from an icon click carries user activation, so
-    // requestPermission() may run without a second click (and silently when
-    // "Allow on every visit" was chosen). Fall back to the button on failure.
-    if (pending && pending.handleKey === idbKey) {
-      const perm = await handle.queryPermission({ mode: 'readwrite' });
-      if (perm === 'denied') {
-        showDenied();
-        return;
-      }
-      if (perm !== 'granted') {
-        try {
-          const r = await handle.requestPermission({ mode: 'readwrite' });
-          if (r === 'granted') { await onGranted(); return; }
-        } catch (_) { /* no activation / old browser → show button */ }
-      }
-    }
 
     await refresh();
   }
